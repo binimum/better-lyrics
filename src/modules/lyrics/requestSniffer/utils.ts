@@ -3,7 +3,10 @@ export function parseTime(timeStr: string | number | undefined): number {
 
   if (typeof timeStr === "number") return timeStr;
 
-  const parts = timeStr.replaceAll(".", ":").split(":").map(val => val.replace(/[^0-9.]/g, "")); // removes any non-numerical character except dots
+  const parts = timeStr
+    .replaceAll(".", ":")
+    .split(":")
+    .map(val => val.replace(/[^0-9.]/g, "")); // removes any non-numerical character except dots
   let totalMs = 0;
 
   try {
