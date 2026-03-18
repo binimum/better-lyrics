@@ -27,7 +27,7 @@ const themes: Theme[] = [
     name: "Spotlight",
     author: "BetterLyrics",
     link: "https://twitter.com/boidushya",
-    path: "Spotlight.css",
+    storeId: "spotlight",
   },
   {
     name: "Pastel",
