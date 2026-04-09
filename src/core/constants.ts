@@ -362,14 +362,14 @@ interface ProviderConfig {
 
 export const PROVIDER_CONFIGS: ProviderConfig[] = [
   {
-    key: "binimum-richsynced",
-    displayName: "BiniLyrics",
+    key: "bLyrics-richsynced",
+    displayName: "Better Lyrics",
     syncType: "syllable",
     priority: 0,
   },
   {
-    key: "bLyrics-richsynced",
-    displayName: "Better Lyrics",
+    key: "binimum-richsynced",
+    displayName: "BiniLyrics",
     syncType: "syllable",
     priority: 1,
   },
@@ -380,20 +380,20 @@ export const PROVIDER_CONFIGS: ProviderConfig[] = [
     priority: 2,
   },
   {
-    key: "binimum-synced",
-    displayName: "BiniLyrics",
+    key: "yt-captions",
+    displayName: "Youtube Captions",
     syncType: "line",
     priority: 3,
   },
   {
-    key: "yt-captions",
-    displayName: "Youtube Captions",
+    key: "bLyrics-synced",
+    displayName: "Better Lyrics",
     syncType: "line",
     priority: 4,
   },
   {
-    key: "bLyrics-synced",
-    displayName: "Better Lyrics",
+    key: "binimum-synced",
+    displayName: "BiniLyrics",
     syncType: "line",
     priority: 5,
   },
