@@ -1,8 +1,4 @@
-import {
-  LYRIC_SOURCE_KEYS,
-  PROVIDER_CONFIGS,
-  PROVIDER_SWITCHED_LOG,
-} from "@constants";
+import { LYRIC_SOURCE_KEYS, PROVIDER_CONFIGS, PROVIDER_SWITCHED_LOG } from "@constants";
 import { getTransientStorage, setTransientStorage } from "@core/storage";
 import { log } from "@utils";
 import binimum from "./binimum";
@@ -50,11 +46,7 @@ interface AudioTrackData {
 interface LyricSource {
   filled: boolean;
   resultCached: boolean;
-  lyricSourceResult:
-    | LyricSourceResult
-    | CubeyLyricSourceResult
-    | YTLyricSourceResult
-    | null;
+  lyricSourceResult: LyricSourceResult | CubeyLyricSourceResult | YTLyricSourceResult | null;
   lyricSourceFiller: (providerParameters: ProviderParameters) => Promise<void>;
 }
 
@@ -108,7 +100,7 @@ export type SourceMapType = {
 
 const defaultPreferredProviderList: LyricSourceKey[] = [...PROVIDER_CONFIGS]
   .sort((a, b) => a.priority - b.priority)
-  .map((p) => p.key) as LyricSourceKey[];
+  .map(p => p.key) as LyricSourceKey[];
 
 function isLyricSourceKey(provider: string): provider is LyricSourceKey {
   return (LYRIC_SOURCE_KEYS as readonly string[]).includes(provider);
@@ -124,15 +116,10 @@ export function initProviders(): void {
   }
   hasInitializedProviders = true;
   const updateProvidersList = (preferredProviderList: string[] | null) => {
-    let activeProviderList: string[] = preferredProviderList ?? [
-      ...defaultPreferredProviderList,
-    ];
+    let activeProviderList: string[] = preferredProviderList ?? [...defaultPreferredProviderList];
 
-    const isValid = defaultPreferredProviderList.every((provider) => {
-      return (
-        activeProviderList.includes(provider) ||
-        activeProviderList.includes(`d_${provider}`)
-      );
+    const isValid = defaultPreferredProviderList.every(provider => {
+      return activeProviderList.includes(provider) || activeProviderList.includes(`d_${provider}`);
     });
 
     if (!isValid) {
@@ -149,9 +136,7 @@ export function initProviders(): void {
 
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area === "sync" && changes.preferredProviderList) {
-      updateProvidersList(
-        changes.preferredProviderList.newValue as string[] | null,
-      );
+      updateProvidersList(changes.preferredProviderList.newValue as string[] | null);
     }
   });
 
@@ -177,19 +162,13 @@ const sourceKeyToFillFn = {
 export type LyricSourceKey = Readonly<keyof typeof sourceKeyToFillFn>;
 
 export function newSourceMap(): SourceMapType {
-  function mapValues<T extends object, U>(
-    obj: T,
-    fn: (value: T[keyof T], key: keyof T) => U,
-  ): { [K in keyof T]: U } {
+  function mapValues<T extends object, U>(obj: T, fn: (value: T[keyof T], key: keyof T) => U): { [K in keyof T]: U } {
     return Object.fromEntries(
-      Object.entries(obj).map(([key, value]) => [
-        key,
-        fn(value as T[keyof T], key as keyof T),
-      ]),
+      Object.entries(obj).map(([key, value]) => [key, fn(value as T[keyof T], key as keyof T)])
     ) as { [K in keyof T]: U };
   }
 
-  return mapValues(sourceKeyToFillFn, (filler) => ({
+  return mapValues(sourceKeyToFillFn, filler => ({
     filled: false,
     lyricSourceResult: null,
     resultCached: false,
@@ -203,7 +182,7 @@ export function newSourceMap(): SourceMapType {
  */
 export async function getLyrics(
   providerParameters: ProviderParameters,
-  sourceName: LyricSourceKey,
+  sourceName: LyricSourceKey
 ): Promise<LyricSourceResult | null> {
   let lyricSource = providerParameters.sourceMap[sourceName];
   if (!lyricSource.filled) {
@@ -224,7 +203,7 @@ export async function getLyrics(
   }
 
   // Save result to cache for each provider
-  defaultPreferredProviderList.forEach((provider) => {
+  defaultPreferredProviderList.forEach(provider => {
     let source = providerParameters.sourceMap[provider];
     if (
       source.filled &&

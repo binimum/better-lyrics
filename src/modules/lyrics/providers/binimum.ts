@@ -22,11 +22,7 @@ function normalizeIsrc(input: string): string | null {
   return ISRC_REGEX.test(candidate) ? candidate : null;
 }
 
-function findIsrc(
-  value: unknown,
-  visited = new Set<unknown>(),
-  depth = 0,
-): string | null {
+function findIsrc(value: unknown, visited = new Set<unknown>(), depth = 0): string | null {
   if (value == null || depth > 6 || visited.has(value)) {
     return null;
   }
@@ -77,11 +73,8 @@ function markFailed(providerParameters: ProviderParameters) {
   providerParameters.sourceMap["binimum-synced"].lyricSourceResult = null;
 }
 
-function enforceTimingType(
-  providerParameters: ProviderParameters,
-  timingType?: BinimumTimingType,
-) {
-  if (timingType === "word") {
+function enforceTimingType(providerParameters: ProviderParameters, timingType?: BinimumTimingType) {
+  if (timingType === "syllable") {
     if (!providerParameters.sourceMap["binimum-richsynced"].lyricSourceResult) {
       providerParameters.sourceMap["binimum-richsynced"].lyricSourceResult =
         providerParameters.sourceMap["binimum-synced"].lyricSourceResult;
@@ -113,22 +106,14 @@ function buildSearchUrl(providerParameters: ProviderParameters): string {
   if (providerParameters.album) {
     url.searchParams.append("album", providerParameters.album);
   }
-  url.searchParams.append(
-    "duration",
-    String(Math.round(providerParameters.duration)),
-  );
+  url.searchParams.append("duration", String(Math.round(providerParameters.duration)));
   return url.toString();
 }
 
-export default async function binimum(
-  providerParameters: ProviderParameters,
-): Promise<void> {
+export default async function binimum(providerParameters: ProviderParameters): Promise<void> {
   try {
     const searchResponse = await fetch(buildSearchUrl(providerParameters), {
-      signal: AbortSignal.any([
-        providerParameters.signal,
-        AbortSignal.timeout(10000),
-      ]),
+      signal: AbortSignal.any([providerParameters.signal, AbortSignal.timeout(10000)]),
     });
     if (!searchResponse.ok) {
       markFailed(providerParameters);
@@ -144,10 +129,7 @@ export default async function binimum(
     }
 
     const ttmlResponse = await fetch(selected.lyricsUrl, {
-      signal: AbortSignal.any([
-        providerParameters.signal,
-        AbortSignal.timeout(10000),
-      ]),
+      signal: AbortSignal.any([providerParameters.signal, AbortSignal.timeout(10000)]),
     });
     if (!ttmlResponse.ok) {
       markFailed(providerParameters);

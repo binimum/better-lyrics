@@ -18,16 +18,14 @@ import type {
 import { parseTime } from "@modules/lyrics/providers/ttmlUtils";
 import { type X2jOptions, XMLParser } from "fast-xml-parser";
 
-function extractAgentMapping(
-  metadataElements: MetadataElement[],
-): Map<string, string> {
+function extractAgentMapping(metadataElements: MetadataElement[]): Map<string, string> {
   const mapping = new Map<string, string>();
   if (!metadataElements || metadataElements.length === 0) return mapping;
 
-  const agentElements = metadataElements.filter((e) => "agent" in e && e[":@"]);
+  const agentElements = metadataElements.filter(e => "agent" in e && e[":@"]);
 
   let voiceIndex = 0;
-  agentElements.forEach((agent) => {
+  agentElements.forEach(agent => {
     const originalId = agent[":@"]?.["@_id"];
     const agentType = agent[":@"]?.["@_type"];
     if (!originalId) return;
@@ -42,16 +40,12 @@ function extractAgentMapping(
   return mapping;
 }
 
-function parseLyricPart(
-  p: ParagraphElementOrBackground[],
-  beginTime: number,
-  ignoreSpanSpace = false,
-) {
+function parseLyricPart(p: ParagraphElementOrBackground[], beginTime: number, ignoreSpanSpace = false) {
   let text = "";
   let parts: LyricPart[] = [];
   let isWordSynced = false;
 
-  p.forEach((p) => {
+  p.forEach(p => {
     let isBackground = false;
     let localP: SpanElement[] = [p];
 
@@ -66,9 +60,7 @@ function parseLyricPart(
         text += subPart["#text"];
         let lastPart = parts[parts.length - 1];
         parts.push({
-          startTimeMs: lastPart
-            ? lastPart.startTimeMs + lastPart.durationMs
-            : beginTime,
+          startTimeMs: lastPart ? lastPart.startTimeMs + lastPart.durationMs : beginTime,
           durationMs: 0,
           words: subPart["#text"],
           isBackground,
@@ -102,19 +94,13 @@ function parseLyricPart(
   };
 }
 
-function insertInstrumentalBreaks(
-  lyrics: Lyric[],
-  songDurationMs: number,
-): Lyric[] {
+function insertInstrumentalBreaks(lyrics: Lyric[], songDurationMs: number): Lyric[] {
   if (lyrics.length === 0) return lyrics;
 
   const gapThreshold = BLYRICS_INSTRUMENTAL_GAP_MS;
   const result: Lyric[] = [];
 
-  const createInstrumental = (
-    startTimeMs: number,
-    durationMs: number,
-  ): Lyric => ({
+  const createInstrumental = (startTimeMs: number, durationMs: number): Lyric => ({
     startTimeMs,
     durationMs,
     words: "",
@@ -166,7 +152,7 @@ export async function fillTtml(
     syncedKey: "bLyrics-synced",
     source: "boidu.dev",
     sourceHref: "https://boidu.dev/",
-  },
+  }
 ) {
   const { richsyncKey, syncedKey, source, sourceHref } = options;
   const parserOptions: X2jOptions = {
@@ -190,14 +176,14 @@ export async function fillTtml(
   const lyricIds = {} as Record<string, string[]>;
 
   const tt = rawObj[0].tt;
-  const ttHead = tt.find((e) => e.head)!.head!;
-  const ttBodyContainer = tt.find((e) => e.body)!;
+  const ttHead = tt.find(e => e.head)!.head!;
+  const ttBodyContainer = tt.find(e => e.body)!;
   const ttBody = ttBodyContainer.body!;
   const ttMeta = ttBodyContainer[":@"];
 
   const agentMapping = extractAgentMapping(ttHead[0].metadata);
 
-  const lines = ttBody.flatMap((e) => e.div);
+  const lines = ttBody.flatMap(e => e.div);
 
   const hasTimingData = lines.length > 0 && lines[0][":@"] !== undefined;
   if (!hasTimingData) {
@@ -210,7 +196,7 @@ export async function fillTtml(
 
   let isWordSynced = false;
 
-  lines.forEach((line) => {
+  lines.forEach(line => {
     let meta = line[":@"];
     if (!meta?.["@_begin"]) return;
     let beginTimeMs = parseTime(meta?.["@_begin"]);
@@ -222,9 +208,7 @@ export async function fillTtml(
     }
 
     const rawAgent = meta?.["@_agent"];
-    const normalizedAgent = rawAgent
-      ? (agentMapping.get(rawAgent) ?? rawAgent)
-      : undefined;
+    const normalizedAgent = rawAgent ? (agentMapping.get(rawAgent) ?? rawAgent) : undefined;
 
     let lyric = lyricIds[meta?.["@_key"] || ""];
     if (meta?.["@_key"]) {
@@ -237,36 +221,28 @@ export async function fillTtml(
       lyric = lyricIds[meta["@_key"]];
     }
 
-    lyrics.set(
-      lyric ? meta["@_key"] + `_${lyric.length}` : lyrics.size.toString(),
-      {
-        agent: normalizedAgent,
-        durationMs: endTimeMs - beginTimeMs,
-        parts: partParse.parts,
-        startTimeMs: beginTimeMs,
-        words: partParse.text,
-        translations: undefined,
-        romanization: undefined,
-        timedRomanization: undefined,
-      },
-    );
+    lyrics.set(lyric ? meta["@_key"] + `_${lyric.length}` : lyrics.size.toString(), {
+      agent: normalizedAgent,
+      durationMs: endTimeMs - beginTimeMs,
+      parts: partParse.parts,
+      startTimeMs: beginTimeMs,
+      words: partParse.text,
+      translations: undefined,
+      romanization: undefined,
+      timedRomanization: undefined,
+    });
   });
 
   const metadataArray = ttHead[0].metadata;
 
-  const findInMetadata = <T>(
-    key: "translations" | "transliterations",
-  ): T | null => {
-    const direct = metadataArray.find((e) => key in e);
+  const findInMetadata = <T>(key: "translations" | "transliterations"): T | null => {
+    const direct = metadataArray.find(e => key in e);
     if (direct?.[key]) return direct[key] as T;
 
     for (const element of metadataArray) {
       for (const value of Object.values(element)) {
         if (Array.isArray(value)) {
-          const nested = value.find(
-            (e): e is MetadataElement =>
-              typeof e === "object" && e !== null && key in e,
-          );
+          const nested = value.find((e): e is MetadataElement => typeof e === "object" && e !== null && key in e);
           if (nested?.[key]) return nested[key] as T;
         }
       }
@@ -274,14 +250,12 @@ export async function fillTtml(
     return null;
   };
 
-  const translationsData =
-    findInMetadata<TranslationContainer[]>("translations");
-  const transliterationsData =
-    findInMetadata<TransliterationContainer[]>("transliterations");
+  const translationsData = findInMetadata<TranslationContainer[]>("translations");
+  const transliterationsData = findInMetadata<TransliterationContainer[]>("transliterations");
 
   if (translationsData && translationsData.length > 0) {
-    translationsData.forEach((translateContainer) => {
-      translateContainer.translation.forEach((translation) => {
+    translationsData.forEach(translateContainer => {
+      translateContainer.translation.forEach(translation => {
         const lang = translateContainer[":@"]["@_lang"];
         const text = translation.text[0]["#text"];
         const line = translation[":@"]["@_for"];
@@ -292,7 +266,7 @@ export async function fillTtml(
             return;
           }
 
-          lyricLines.forEach((id) => {
+          lyricLines.forEach(id => {
             const lyricLine = lyrics.get(id);
             if (!lyricLine) {
               return;
@@ -307,43 +281,34 @@ export async function fillTtml(
   }
 
   if (transliterationsData && transliterationsData.length > 0) {
-    transliterationsData[0].transliteration.forEach(
-      (transliteration: TransliterationItem) => {
-        const line = transliteration[":@"]["@_for"];
-        if (!line) {
+    transliterationsData[0].transliteration.forEach((transliteration: TransliterationItem) => {
+      const line = transliteration[":@"]["@_for"];
+      if (!line) {
+        return;
+      }
+
+      const lyricLines = lyricIds[line];
+      if (!lyricLines) {
+        return;
+      }
+
+      lyricLines.forEach(id => {
+        const lyricLine = lyrics.get(id);
+        if (!lyricLine) {
           return;
         }
 
-        const lyricLines = lyricIds[line];
-        if (!lyricLines) {
-          return;
-        }
+        const beginTime = lyricLine.startTimeMs;
+        const parseResult = parseLyricPart(transliteration.text, beginTime, false);
 
-        lyricLines.forEach((id) => {
-          const lyricLine = lyrics.get(id);
-          if (!lyricLine) {
-            return;
-          }
-
-          const beginTime = lyricLine.startTimeMs;
-          const parseResult = parseLyricPart(
-            transliteration.text,
-            beginTime,
-            false,
-          );
-
-          lyricLine.romanization = parseResult.text;
-          lyricLine.timedRomanization = parseResult.parts;
-        });
-      },
-    );
+        lyricLine.romanization = parseResult.text;
+        lyricLine.timedRomanization = parseResult.parts;
+      });
+    });
   }
 
   let lyricArray = Array.from(lyrics.values());
-  const songDurationMs =
-    ttMeta && ttMeta["@_dur"]
-      ? parseTime(ttMeta["@_dur"])
-      : providerParameters.duration * 1000;
+  const songDurationMs = ttMeta && ttMeta["@_dur"] ? parseTime(ttMeta["@_dur"]) : providerParameters.duration * 1000;
   lyricArray = insertInstrumentalBreaks(lyricArray, songDurationMs);
 
   let result: LyricSourceResult = {
@@ -367,9 +332,7 @@ export async function fillTtml(
   providerParameters.sourceMap[richsyncKey].filled = true;
 }
 
-export default async function bLyrics(
-  providerParameters: ProviderParameters,
-): Promise<void> {
+export default async function bLyrics(providerParameters: ProviderParameters): Promise<void> {
   // Fetch from the primary API if cache is empty or invalid
   const url = new URL(LYRICS_API_URL);
   url.searchParams.append("s", providerParameters.song);
@@ -381,10 +344,7 @@ export default async function bLyrics(
   url.searchParams.append("v", providerParameters.videoId);
 
   const response = await fetch(url.toString(), {
-    signal: AbortSignal.any([
-      providerParameters.signal,
-      AbortSignal.timeout(10000),
-    ]),
+    signal: AbortSignal.any([providerParameters.signal, AbortSignal.timeout(10000)]),
   });
 
   if (!response.ok) {
@@ -397,6 +357,6 @@ export default async function bLyrics(
     return;
   }
 
-  let responseString: string = await response.json().then((json) => json.ttml);
+  let responseString: string = await response.json().then(json => json.ttml);
   await fillTtml(responseString, providerParameters);
 }

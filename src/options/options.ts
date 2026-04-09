@@ -1,21 +1,10 @@
 // Function to save user options
 
 import { LOG_PREFIX, ROMANIZATION_LANGUAGES } from "@constants";
-import {
-  getLanguageDisplayName,
-  initI18n,
-  loadLocaleOverride,
-  SUPPORTED_LOCALES,
-  t,
-} from "@core/i18n";
+import { getLanguageDisplayName, initI18n, loadLocaleOverride, SUPPORTED_LOCALES, t } from "@core/i18n";
 import Sortable from "sortablejs";
 import { showModal } from "./editor/ui/feedback";
-import {
-  exportIdentity,
-  getIdentity,
-  importIdentity,
-  type KeyIdentity,
-} from "./store/keyIdentity";
+import { exportIdentity, getIdentity, importIdentity, type KeyIdentity } from "./store/keyIdentity";
 import { initStoreUI, setupYourThemesButton } from "./store/store";
 
 interface Options {
@@ -45,53 +34,34 @@ const getOptionsFromForm = (): Options => {
   const providerElems = document.getElementById("providers-list")!.children;
   for (let i = 0; i < providerElems.length; i++) {
     let id = providerElems[i].id.slice(2);
-    if (
-      !(providerElems[i].children[1].children[0] as HTMLInputElement).checked
-    ) {
+    if (!(providerElems[i].children[1].children[0] as HTMLInputElement).checked) {
       id = "d_" + id;
     }
     preferredProviderList.push(id);
   }
 
   return {
-    isLogsEnabled: (document.getElementById("logs") as HTMLInputElement)
-      .checked,
-    isAutoSwitchEnabled: (
-      document.getElementById("autoSwitch") as HTMLInputElement
-    ).checked,
-    isAlbumArtEnabled: (document.getElementById("albumArt") as HTMLInputElement)
-      .checked,
-    isFullScreenDisabled: (
-      document.getElementById("isFullScreenDisabled") as HTMLInputElement
-    ).checked,
-    isStylizedAnimationsEnabled: (
-      document.getElementById("isStylizedAnimationsEnabled") as HTMLInputElement
-    ).checked,
-    isTranslateEnabled: (
-      document.getElementById("translate") as HTMLInputElement
-    ).checked,
-    translationLanguage: (
-      document.getElementById("translationLanguage") as HTMLInputElement
-    ).value,
-    isCursorAutoHideEnabled: (
-      document.getElementById("cursorAutoHide") as HTMLInputElement
-    ).checked,
-    isRomanizationEnabled: (
-      document.getElementById("isRomanizationEnabled") as HTMLInputElement
-    ).checked,
+    isLogsEnabled: (document.getElementById("logs") as HTMLInputElement).checked,
+    isAutoSwitchEnabled: (document.getElementById("autoSwitch") as HTMLInputElement).checked,
+    isAlbumArtEnabled: (document.getElementById("albumArt") as HTMLInputElement).checked,
+    isFullScreenDisabled: (document.getElementById("isFullScreenDisabled") as HTMLInputElement).checked,
+    isStylizedAnimationsEnabled: (document.getElementById("isStylizedAnimationsEnabled") as HTMLInputElement).checked,
+    isTranslateEnabled: (document.getElementById("translate") as HTMLInputElement).checked,
+    translationLanguage: (document.getElementById("translationLanguage") as HTMLInputElement).value,
+    isCursorAutoHideEnabled: (document.getElementById("cursorAutoHide") as HTMLInputElement).checked,
+    isRomanizationEnabled: (document.getElementById("isRomanizationEnabled") as HTMLInputElement).checked,
     preferredProviderList: preferredProviderList,
     romanizationDisabledLanguages: romanizationDisabledLanguages,
     translationDisabledLanguages: translationDisabledLanguages,
-    uiLanguage: (document.getElementById("uiLanguage") as HTMLSelectElement)
-      .value,
+    uiLanguage: (document.getElementById("uiLanguage") as HTMLSelectElement).value,
   };
 };
 
 // Function to save options to Chrome storage
 const saveOptionsToStorage = (options: Options): void => {
   chrome.storage.sync.set(options, () => {
-    chrome.tabs.query({ url: "https://music.youtube.com/*" }, (tabs) => {
-      tabs.forEach((tab) => {
+    chrome.tabs.query({ url: "https://music.youtube.com/*" }, tabs => {
+      tabs.forEach(tab => {
         chrome.tabs.sendMessage(tab.id!, {
           action: "updateSettings",
           settings: options,
@@ -134,7 +104,7 @@ const showAlert = (message: string): void => {
 
 // Function to clear transient lyrics
 const clearTransientLyrics = (callback?: () => void): void => {
-  chrome.tabs.query({ url: "https://music.youtube.com/*" }, (tabs) => {
+  chrome.tabs.query({ url: "https://music.youtube.com/*" }, tabs => {
     if (tabs.length === 0) {
       updateCacheInfo(null);
       showAlert(t("options_alert_cacheCleared"));
@@ -143,8 +113,8 @@ const clearTransientLyrics = (callback?: () => void): void => {
     }
 
     let completedTabs = 0;
-    tabs.forEach((tab) => {
-      chrome.tabs.sendMessage(tab.id!, { action: "clearCache" }, (response) => {
+    tabs.forEach(tab => {
+      chrome.tabs.sendMessage(tab.id!, { action: "clearCache" }, response => {
         completedTabs++;
         if (completedTabs === tabs.length) {
           if (response?.success) {
@@ -174,7 +144,7 @@ const _formatBytes = (bytes: number, decimals = 2): string => {
 
 // Function to subscribe to cache info updates
 const subscribeToCacheInfo = (): void => {
-  chrome.storage.sync.get("cacheInfo", (items) => {
+  chrome.storage.sync.get("cacheInfo", items => {
     //@ts-ignore -- I'm lazy someone fix this
     updateCacheInfo(items);
   });
@@ -192,9 +162,7 @@ const subscribeToCacheInfo = (): void => {
 };
 
 // Function to update cache info
-const updateCacheInfo = (
-  items: { cacheInfo: { count: number; size: number } } | null,
-): void => {
+const updateCacheInfo = (items: { cacheInfo: { count: number; size: number } } | null): void => {
   if (!items) {
     showAlert(t("options_alert_nothingToClear"));
     return;
@@ -241,36 +209,22 @@ const restoreOptions = (): void => {
 
   chrome.storage.sync.get(defaultOptions, setOptionsInForm);
 
-  document
-    .getElementById("clear-cache")!
-    .addEventListener("click", () => clearTransientLyrics());
+  document.getElementById("clear-cache")!.addEventListener("click", () => clearTransientLyrics());
 };
 
 // Function to set options in form elements
 const setOptionsInForm = (items: Options): void => {
-  (document.getElementById("logs") as HTMLInputElement).checked =
-    items.isLogsEnabled;
-  (document.getElementById("albumArt") as HTMLInputElement).checked =
-    items.isAlbumArtEnabled;
-  (document.getElementById("autoSwitch") as HTMLInputElement).checked =
-    items.isAutoSwitchEnabled;
-  (document.getElementById("cursorAutoHide") as HTMLInputElement).checked =
-    items.isCursorAutoHideEnabled;
-  (
-    document.getElementById("isFullScreenDisabled") as HTMLInputElement
-  ).checked = items.isFullScreenDisabled;
-  (
-    document.getElementById("isStylizedAnimationsEnabled") as HTMLInputElement
-  ).checked = items.isStylizedAnimationsEnabled;
-  (document.getElementById("translate") as HTMLInputElement).checked =
-    items.isTranslateEnabled;
-  (document.getElementById("translationLanguage") as HTMLInputElement).value =
-    items.translationLanguage;
-  (
-    document.getElementById("isRomanizationEnabled") as HTMLInputElement
-  ).checked = items.isRomanizationEnabled;
-  (document.getElementById("uiLanguage") as HTMLSelectElement).value =
-    items.uiLanguage;
+  (document.getElementById("logs") as HTMLInputElement).checked = items.isLogsEnabled;
+  (document.getElementById("albumArt") as HTMLInputElement).checked = items.isAlbumArtEnabled;
+  (document.getElementById("autoSwitch") as HTMLInputElement).checked = items.isAutoSwitchEnabled;
+  (document.getElementById("cursorAutoHide") as HTMLInputElement).checked = items.isCursorAutoHideEnabled;
+  (document.getElementById("isFullScreenDisabled") as HTMLInputElement).checked = items.isFullScreenDisabled;
+  (document.getElementById("isStylizedAnimationsEnabled") as HTMLInputElement).checked =
+    items.isStylizedAnimationsEnabled;
+  (document.getElementById("translate") as HTMLInputElement).checked = items.isTranslateEnabled;
+  (document.getElementById("translationLanguage") as HTMLInputElement).value = items.translationLanguage;
+  (document.getElementById("isRomanizationEnabled") as HTMLInputElement).checked = items.isRomanizationEnabled;
+  (document.getElementById("uiLanguage") as HTMLSelectElement).value = items.uiLanguage;
   romanizationDisabledLanguages = items.romanizationDisabledLanguages || [];
   translationDisabledLanguages = items.translationDisabledLanguages || [];
   updateExclusionsConfigVisibility();
@@ -304,10 +258,10 @@ const setOptionsInForm = (items: Options): void => {
 
     if (providerElem === null) continue;
     providersListElem.appendChild(providerElem);
-    unseenProviders = unseenProviders.filter((p) => p !== rawProviderId);
+    unseenProviders = unseenProviders.filter(p => p !== rawProviderId);
   }
 
-  unseenProviders.forEach((p) => {
+  unseenProviders.forEach(p => {
     const providerElem = createProviderElem(p);
     if (providerElem === null) return;
     providersListElem.appendChild(providerElem);
@@ -377,10 +331,7 @@ const getSyncTypeConfig = (): {
   },
 });
 
-function createProviderElem(
-  providerId: string,
-  checked = true,
-): HTMLLIElement | null {
+function createProviderElem(providerId: string, checked = true): HTMLLIElement | null {
   const providerIdToInfoMap = getProviderIdToInfoMap();
   if (!Object.hasOwn(providerIdToInfoMap, providerId)) {
     console.warn("Unknown provider ID:", providerId);
@@ -422,10 +373,7 @@ function createProviderElem(
   const tagElem = document.createElement("span");
   tagElem.classList.add("sync-tag", `sync-tag--${providerInfo.syncType}`);
   tagElem.dataset.tooltip = syncConfig.tooltip;
-  const svgDoc = new DOMParser().parseFromString(
-    syncConfig.icon,
-    "image/svg+xml",
-  );
+  const svgDoc = new DOMParser().parseFromString(syncConfig.icon, "image/svg+xml");
   tagElem.appendChild(svgDoc.documentElement);
   const tagLabel = document.createElement("span");
   tagLabel.textContent = syncConfig.label;
@@ -453,9 +401,7 @@ function createProviderElem(
 // -- Display Language Dropdown --------------------------
 
 function populateLanguageDropdown(): void {
-  const select = document.getElementById("uiLanguage") as
-    | HTMLSelectElement
-    | undefined;
+  const select = document.getElementById("uiLanguage") as HTMLSelectElement | undefined;
   if (!select) return;
 
   const browserLang = chrome.i18n.getUILanguage();
@@ -486,12 +432,8 @@ function restoreActiveTab(): void {
   const targetContent = document.querySelector(target);
   if (!targetBtn || !targetContent) return;
 
-  document
-    .querySelectorAll(".tab")
-    .forEach((btn) => btn.classList.remove("active"));
-  document
-    .querySelectorAll(".tab-content")
-    .forEach((content) => content.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(btn => btn.classList.remove("active"));
+  document.querySelectorAll(".tab-content").forEach(content => content.classList.remove("active"));
   targetBtn.classList.add("active");
   targetContent.classList.add("active");
 }
@@ -505,20 +447,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   restoreOptions();
   restoreActiveTab();
 });
-document
-  .querySelectorAll("#options input, #options select")
-  .forEach((element) => {
-    element.addEventListener("change", saveOptions);
-  });
+document.querySelectorAll("#options input, #options select").forEach(element => {
+  element.addEventListener("change", saveOptions);
+});
 
 // Tab switcher
 const tabButtons = document.querySelectorAll(".tab");
 const tabContents = document.querySelectorAll(".tab-content");
 
-tabButtons.forEach((button) => {
+tabButtons.forEach(button => {
   button.addEventListener("click", () => {
-    tabButtons.forEach((btn) => btn.classList.remove("active"));
-    tabContents.forEach((content) => content.classList.remove("active"));
+    tabButtons.forEach(btn => btn.classList.remove("active"));
+    tabContents.forEach(content => content.classList.remove("active"));
 
     button.classList.add("active");
     const target = button.getAttribute("data-target")!;
@@ -577,13 +517,11 @@ document.addEventListener("DOMContentLoaded", () => {
   setupYourThemesButton();
   initLangExclusionsModal();
 
-  document
-    .getElementById("browse-themes-btn")
-    ?.addEventListener("click", () => {
-      chrome.tabs.create({
-        url: chrome.runtime.getURL("pages/marketplace.html"),
-      });
+  document.getElementById("browse-themes-btn")?.addEventListener("click", () => {
+    chrome.tabs.create({
+      url: chrome.runtime.getURL("pages/marketplace.html"),
     });
+  });
 
   initIdentityUI();
 });
@@ -600,12 +538,8 @@ async function initIdentityUI(): Promise<void> {
     displayNameEl.textContent = t("options_alert_identityLoadError");
   }
 
-  document
-    .getElementById("export-identity-btn")
-    ?.addEventListener("click", handleExportIdentity);
-  document
-    .getElementById("import-identity-btn")
-    ?.addEventListener("click", handleImportIdentity);
+  document.getElementById("export-identity-btn")?.addEventListener("click", handleExportIdentity);
+  document.getElementById("import-identity-btn")?.addEventListener("click", handleImportIdentity);
 }
 
 async function handleExportIdentity(): Promise<void> {
@@ -614,25 +548,19 @@ async function handleExportIdentity(): Promise<void> {
     const exportData = await exportIdentity();
     const filename = `better-lyrics-identity-${identity.displayName}.json`;
 
-    chrome.permissions.contains(
-      { permissions: ["downloads"] },
-      (hasPermission) => {
-        if (hasPermission) {
-          downloadIdentityFile(exportData, filename);
-        } else {
-          chrome.permissions.request(
-            { permissions: ["downloads"] },
-            (granted) => {
-              if (granted) {
-                downloadIdentityFile(exportData, filename);
-              } else {
-                fallbackDownloadIdentity(exportData, filename);
-              }
-            },
-          );
-        }
-      },
-    );
+    chrome.permissions.contains({ permissions: ["downloads"] }, hasPermission => {
+      if (hasPermission) {
+        downloadIdentityFile(exportData, filename);
+      } else {
+        chrome.permissions.request({ permissions: ["downloads"] }, granted => {
+          if (granted) {
+            downloadIdentityFile(exportData, filename);
+          } else {
+            fallbackDownloadIdentity(exportData, filename);
+          }
+        });
+      }
+    });
   } catch (error) {
     console.error(LOG_PREFIX, "Failed to export identity:", error);
     showAlert(t("options_alert_exportFailed"));
@@ -685,7 +613,7 @@ async function handleImportIdentity(): Promise<void> {
   input.type = "file";
   input.accept = ".json";
 
-  input.onchange = async (e) => {
+  input.onchange = async e => {
     const file = (e.target as HTMLInputElement).files?.[0];
     if (!file) return;
 
@@ -695,8 +623,7 @@ async function handleImportIdentity(): Promise<void> {
       updateIdentityDisplay(imported);
       showAlert(t("options_alert_importSuccess"));
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Invalid identity file";
+      const message = err instanceof Error ? err.message : "Invalid identity file";
       showAlert(message);
     }
   };
@@ -718,15 +645,9 @@ let translationDisabledLanguages: string[] = [];
 let activeExclusionTab: "romanization" | "translation" = "romanization";
 
 function updateExclusionsConfigVisibility(): void {
-  const romanizationToggle = document.getElementById(
-    "isRomanizationEnabled",
-  ) as HTMLInputElement;
-  const translateToggle = document.getElementById(
-    "translate",
-  ) as HTMLInputElement;
-  const configContainer = document.getElementById(
-    "romanization-config-container",
-  );
+  const romanizationToggle = document.getElementById("isRomanizationEnabled") as HTMLInputElement;
+  const translateToggle = document.getElementById("translate") as HTMLInputElement;
+  const configContainer = document.getElementById("romanization-config-container");
   if (!configContainer) return;
 
   const shouldShow = romanizationToggle?.checked || translateToggle?.checked;
@@ -734,39 +655,24 @@ function updateExclusionsConfigVisibility(): void {
 }
 
 function initLangExclusionsModal(): void {
-  const romanizationToggle = document.getElementById(
-    "isRomanizationEnabled",
-  ) as HTMLInputElement;
-  const translateToggle = document.getElementById(
-    "translate",
-  ) as HTMLInputElement;
+  const romanizationToggle = document.getElementById("isRomanizationEnabled") as HTMLInputElement;
+  const translateToggle = document.getElementById("translate") as HTMLInputElement;
   const configBtn = document.getElementById("romanization-config-btn");
   const modalOverlay = document.getElementById("lang-exclusions-modal-overlay");
   const modalClose = document.getElementById("lang-exclusions-modal-close");
-  const romanizationSearchInput = document.getElementById(
-    "romanization-search",
-  ) as HTMLInputElement;
-  const translationSearchInput = document.getElementById(
-    "translation-search",
-  ) as HTMLInputElement;
+  const romanizationSearchInput = document.getElementById("romanization-search") as HTMLInputElement;
+  const translationSearchInput = document.getElementById("translation-search") as HTMLInputElement;
   const resetBtn = document.getElementById("lang-exclusions-reset-btn");
   const tabButtons = modalOverlay?.querySelectorAll(".modal-tab");
 
   if (!configBtn || !modalOverlay) return;
 
-  romanizationToggle?.addEventListener(
-    "change",
-    updateExclusionsConfigVisibility,
-  );
+  romanizationToggle?.addEventListener("change", updateExclusionsConfigVisibility);
   translateToggle?.addEventListener("change", updateExclusionsConfigVisibility);
 
   configBtn.addEventListener("click", () => {
     modalOverlay.classList.add("active");
-    const tabName = t(
-      activeExclusionTab === "romanization"
-        ? "options_romanization_tab"
-        : "options_translation_tab",
-    );
+    const tabName = t(activeExclusionTab === "romanization" ? "options_romanization_tab" : "options_translation_tab");
     if (resetBtn) resetBtn.textContent = t("options_resetToDefault", tabName);
     if (activeExclusionTab === "romanization") {
       romanizationSearchInput?.focus();
@@ -777,47 +683,37 @@ function initLangExclusionsModal(): void {
 
   modalClose?.addEventListener("click", closeLangExclusionsModal);
 
-  modalOverlay.addEventListener("click", (e) => {
+  modalOverlay.addEventListener("click", e => {
     if (e.target === modalOverlay) {
       closeLangExclusionsModal();
     }
   });
 
-  document.addEventListener("keydown", (e) => {
+  document.addEventListener("keydown", e => {
     if (e.key === "Escape" && modalOverlay.classList.contains("active")) {
       closeLangExclusionsModal();
     }
   });
 
   // Tab switching
-  tabButtons?.forEach((btn) => {
+  tabButtons?.forEach(btn => {
     btn.addEventListener("click", () => {
-      const tab = (btn as HTMLElement).dataset.tab as
-        | "romanization"
-        | "translation";
+      const tab = (btn as HTMLElement).dataset.tab as "romanization" | "translation";
       switchExclusionTab(tab);
     });
   });
 
   romanizationSearchInput?.addEventListener("input", () => {
-    filterLanguagePills(
-      "romanization-pills-container",
-      romanizationSearchInput.value,
-    );
+    filterLanguagePills("romanization-pills-container", romanizationSearchInput.value);
   });
 
   translationSearchInput?.addEventListener("input", () => {
-    filterLanguagePills(
-      "translation-pills-container",
-      translationSearchInput.value,
-    );
+    filterLanguagePills("translation-pills-container", translationSearchInput.value);
   });
 
   resetBtn?.addEventListener("click", async () => {
     const tabName =
-      activeExclusionTab === "romanization"
-        ? t("options_romanization_tab")
-        : t("options_translation_tab");
+      activeExclusionTab === "romanization" ? t("options_romanization_tab") : t("options_translation_tab");
     const result = await showModal({
       title: t("options_romanization_resetTitle", tabName),
       message: t("options_romanization_resetMessage"),
@@ -842,46 +738,34 @@ function initLangExclusionsModal(): void {
 function switchExclusionTab(tab: "romanization" | "translation"): void {
   activeExclusionTab = tab;
 
-  const tabButtons = document.querySelectorAll(
-    "#lang-exclusions-modal-overlay .modal-tab",
-  );
+  const tabButtons = document.querySelectorAll("#lang-exclusions-modal-overlay .modal-tab");
   const tabContents = document.querySelectorAll(".lang-exclusions-tab-content");
   const resetBtn = document.getElementById("lang-exclusions-reset-btn");
 
-  tabButtons.forEach((btn) => {
+  tabButtons.forEach(btn => {
     const btnTab = (btn as HTMLElement).dataset.tab;
     btn.classList.toggle("active", btnTab === tab);
   });
 
-  tabContents.forEach((content) => {
+  tabContents.forEach(content => {
     const contentId = content.id;
     content.classList.toggle("active", contentId === `${tab}-tab-content`);
   });
 
   if (resetBtn) {
-    const tabName = t(
-      tab === "romanization"
-        ? "options_romanization_tab"
-        : "options_translation_tab",
-    );
+    const tabName = t(tab === "romanization" ? "options_romanization_tab" : "options_translation_tab");
     resetBtn.textContent = t("options_resetToDefault", tabName);
   }
 
   // Focus the search input of the active tab
-  const searchInput = document.getElementById(
-    `${tab}-search`,
-  ) as HTMLInputElement;
+  const searchInput = document.getElementById(`${tab}-search`) as HTMLInputElement;
   searchInput?.focus();
 }
 
 function closeLangExclusionsModal(): void {
   const modalOverlay = document.getElementById("lang-exclusions-modal-overlay");
-  const romanizationSearchInput = document.getElementById(
-    "romanization-search",
-  ) as HTMLInputElement;
-  const translationSearchInput = document.getElementById(
-    "translation-search",
-  ) as HTMLInputElement;
+  const romanizationSearchInput = document.getElementById("romanization-search") as HTMLInputElement;
+  const translationSearchInput = document.getElementById("translation-search") as HTMLInputElement;
 
   modalOverlay?.classList.remove("active");
 
@@ -902,10 +786,8 @@ function renderRomanizationLanguagePills(): void {
   if (!container) return;
 
   if (!romanizationPillsDelegated) {
-    container.addEventListener("click", (e) => {
-      const pill = (e.target as HTMLElement).closest(
-        "[data-lang-code]",
-      ) as HTMLElement | null;
+    container.addEventListener("click", e => {
+      const pill = (e.target as HTMLElement).closest("[data-lang-code]") as HTMLElement | null;
       if (pill?.dataset.langCode) {
         toggleRomanizationLanguage(pill.dataset.langCode);
       }
@@ -930,12 +812,10 @@ function renderRomanizationLanguagePills(): void {
 }
 
 function getTranslationLanguagesFromSelect(): string[] {
-  const select = document.getElementById(
-    "translationLanguage",
-  ) as HTMLSelectElement;
+  const select = document.getElementById("translationLanguage") as HTMLSelectElement;
   if (!select) return [];
   return Array.from(select.options)
-    .map((opt) => opt.value)
+    .map(opt => opt.value)
     .filter(Boolean);
 }
 
@@ -946,10 +826,8 @@ function renderTranslationLanguagePills(): void {
   if (!container) return;
 
   if (!translationPillsDelegated) {
-    container.addEventListener("click", (e) => {
-      const pill = (e.target as HTMLElement).closest(
-        "[data-lang-code]",
-      ) as HTMLElement | null;
+    container.addEventListener("click", e => {
+      const pill = (e.target as HTMLElement).closest("[data-lang-code]") as HTMLElement | null;
       if (pill?.dataset.langCode) {
         toggleTranslationLanguage(pill.dataset.langCode);
       }
@@ -1002,11 +880,10 @@ function filterLanguagePills(containerId: string, query: string): void {
   const normalizedQuery = query.toLowerCase().trim();
   const pills = container.querySelectorAll(".lang-pill");
 
-  pills.forEach((pill) => {
+  pills.forEach(pill => {
     const langName = (pill as HTMLElement).dataset.langName || "";
     const langCode = (pill as HTMLElement).dataset.langCode || "";
-    const matches =
-      langName.includes(normalizedQuery) || langCode.includes(normalizedQuery);
+    const matches = langName.includes(normalizedQuery) || langCode.includes(normalizedQuery);
     pill.classList.toggle("lang-pill-hidden", !matches);
   });
 }
