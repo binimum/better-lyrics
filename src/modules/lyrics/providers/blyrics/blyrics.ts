@@ -8,18 +8,26 @@ import type {
   TransliterationItem,
   TtmlRoot,
 } from "@modules/lyrics/providers/blyrics/blyrics-types";
+import type {
+  Lyric,
+  LyricPart,
+  LyricSourceKey,
+  LyricSourceResult,
+  ProviderParameters,
+} from "@modules/lyrics/providers/shared";
 import { parseTime } from "@modules/lyrics/providers/ttmlUtils";
-import type { Lyric, LyricPart, LyricSourceResult, ProviderParameters } from "@modules/lyrics/providers/shared";
 import { type X2jOptions, XMLParser } from "fast-xml-parser";
 
-function extractAgentMapping(metadataElements: MetadataElement[]): Map<string, string> {
+function extractAgentMapping(
+  metadataElements: MetadataElement[],
+): Map<string, string> {
   const mapping = new Map<string, string>();
   if (!metadataElements || metadataElements.length === 0) return mapping;
 
-  const agentElements = metadataElements.filter(e => "agent" in e && e[":@"]);
+  const agentElements = metadataElements.filter((e) => "agent" in e && e[":@"]);
 
   let voiceIndex = 0;
-  agentElements.forEach(agent => {
+  agentElements.forEach((agent) => {
     const originalId = agent[":@"]?.["@_id"];
     const agentType = agent[":@"]?.["@_type"];
     if (!originalId) return;
@@ -34,12 +42,16 @@ function extractAgentMapping(metadataElements: MetadataElement[]): Map<string, s
   return mapping;
 }
 
-function parseLyricPart(p: ParagraphElementOrBackground[], beginTime: number, ignoreSpanSpace = false) {
+function parseLyricPart(
+  p: ParagraphElementOrBackground[],
+  beginTime: number,
+  ignoreSpanSpace = false,
+) {
   let text = "";
   let parts: LyricPart[] = [];
   let isWordSynced = false;
 
-  p.forEach(p => {
+  p.forEach((p) => {
     let isBackground = false;
     let localP: SpanElement[] = [p];
 
@@ -54,7 +66,9 @@ function parseLyricPart(p: ParagraphElementOrBackground[], beginTime: number, ig
         text += subPart["#text"];
         let lastPart = parts[parts.length - 1];
         parts.push({
-          startTimeMs: lastPart ? lastPart.startTimeMs + lastPart.durationMs : beginTime,
+          startTimeMs: lastPart
+            ? lastPart.startTimeMs + lastPart.durationMs
+            : beginTime,
           durationMs: 0,
           words: subPart["#text"],
           isBackground,
@@ -88,13 +102,19 @@ function parseLyricPart(p: ParagraphElementOrBackground[], beginTime: number, ig
   };
 }
 
-function insertInstrumentalBreaks(lyrics: Lyric[], songDurationMs: number): Lyric[] {
+function insertInstrumentalBreaks(
+  lyrics: Lyric[],
+  songDurationMs: number,
+): Lyric[] {
   if (lyrics.length === 0) return lyrics;
 
   const gapThreshold = BLYRICS_INSTRUMENTAL_GAP_MS;
   const result: Lyric[] = [];
 
-  const createInstrumental = (startTimeMs: number, durationMs: number): Lyric => ({
+  const createInstrumental = (
+    startTimeMs: number,
+    durationMs: number,
+  ): Lyric => ({
     startTimeMs,
     durationMs,
     words: "",
@@ -131,8 +151,25 @@ function insertInstrumentalBreaks(lyrics: Lyric[], songDurationMs: number): Lyri
   return result;
 }
 
-export async function fillTtml(responseString: string, providerParameters: ProviderParameters) {
-  const options: X2jOptions = {
+interface FillTtmlOptions {
+  richsyncKey: LyricSourceKey;
+  syncedKey: LyricSourceKey;
+  source: string;
+  sourceHref: string;
+}
+
+export async function fillTtml(
+  responseString: string,
+  providerParameters: ProviderParameters,
+  options: FillTtmlOptions = {
+    richsyncKey: "bLyrics-richsynced",
+    syncedKey: "bLyrics-synced",
+    source: "boidu.dev",
+    sourceHref: "https://boidu.dev/",
+  },
+) {
+  const { richsyncKey, syncedKey, source, sourceHref } = options;
+  const parserOptions: X2jOptions = {
     ignoreAttributes: false,
     attributeNamePrefix: "@_",
     attributesGroupName: false,
@@ -145,7 +182,7 @@ export async function fillTtml(responseString: string, providerParameters: Provi
     parseTagValue: false,
   };
 
-  const parser = new XMLParser(options);
+  const parser = new XMLParser(parserOptions);
 
   const rawObj = (await parser.parse(responseString)) as TtmlRoot;
 
@@ -153,27 +190,27 @@ export async function fillTtml(responseString: string, providerParameters: Provi
   const lyricIds = {} as Record<string, string[]>;
 
   const tt = rawObj[0].tt;
-  const ttHead = tt.find(e => e.head)!.head!;
-  const ttBodyContainer = tt.find(e => e.body)!;
+  const ttHead = tt.find((e) => e.head)!.head!;
+  const ttBodyContainer = tt.find((e) => e.body)!;
   const ttBody = ttBodyContainer.body!;
   const ttMeta = ttBodyContainer[":@"];
 
   const agentMapping = extractAgentMapping(ttHead[0].metadata);
 
-  const lines = ttBody.flatMap(e => e.div);
+  const lines = ttBody.flatMap((e) => e.div);
 
   const hasTimingData = lines.length > 0 && lines[0][":@"] !== undefined;
   if (!hasTimingData) {
-    providerParameters.sourceMap["bLyrics-richsynced"].lyricSourceResult = null;
-    providerParameters.sourceMap["bLyrics-richsynced"].filled = true;
-    providerParameters.sourceMap["bLyrics-synced"].lyricSourceResult = null;
-    providerParameters.sourceMap["bLyrics-synced"].filled = true;
+    providerParameters.sourceMap[richsyncKey].lyricSourceResult = null;
+    providerParameters.sourceMap[richsyncKey].filled = true;
+    providerParameters.sourceMap[syncedKey].lyricSourceResult = null;
+    providerParameters.sourceMap[syncedKey].filled = true;
     return;
   }
 
   let isWordSynced = false;
 
-  lines.forEach(line => {
+  lines.forEach((line) => {
     let meta = line[":@"];
     if (!meta?.["@_begin"]) return;
     let beginTimeMs = parseTime(meta?.["@_begin"]);
@@ -185,7 +222,9 @@ export async function fillTtml(responseString: string, providerParameters: Provi
     }
 
     const rawAgent = meta?.["@_agent"];
-    const normalizedAgent = rawAgent ? (agentMapping.get(rawAgent) ?? rawAgent) : undefined;
+    const normalizedAgent = rawAgent
+      ? (agentMapping.get(rawAgent) ?? rawAgent)
+      : undefined;
 
     let lyric = lyricIds[meta?.["@_key"] || ""];
     if (meta?.["@_key"]) {
@@ -198,28 +237,36 @@ export async function fillTtml(responseString: string, providerParameters: Provi
       lyric = lyricIds[meta["@_key"]];
     }
 
-    lyrics.set(lyric ? meta["@_key"] + `_${lyric.length}` : lyrics.size.toString(), {
-      agent: normalizedAgent,
-      durationMs: endTimeMs - beginTimeMs,
-      parts: partParse.parts,
-      startTimeMs: beginTimeMs,
-      words: partParse.text,
-      translations: undefined,
-      romanization: undefined,
-      timedRomanization: undefined,
-    });
+    lyrics.set(
+      lyric ? meta["@_key"] + `_${lyric.length}` : lyrics.size.toString(),
+      {
+        agent: normalizedAgent,
+        durationMs: endTimeMs - beginTimeMs,
+        parts: partParse.parts,
+        startTimeMs: beginTimeMs,
+        words: partParse.text,
+        translations: undefined,
+        romanization: undefined,
+        timedRomanization: undefined,
+      },
+    );
   });
 
   const metadataArray = ttHead[0].metadata;
 
-  const findInMetadata = <T>(key: "translations" | "transliterations"): T | null => {
-    const direct = metadataArray.find(e => key in e);
+  const findInMetadata = <T>(
+    key: "translations" | "transliterations",
+  ): T | null => {
+    const direct = metadataArray.find((e) => key in e);
     if (direct?.[key]) return direct[key] as T;
 
     for (const element of metadataArray) {
       for (const value of Object.values(element)) {
         if (Array.isArray(value)) {
-          const nested = value.find((e): e is MetadataElement => typeof e === "object" && e !== null && key in e);
+          const nested = value.find(
+            (e): e is MetadataElement =>
+              typeof e === "object" && e !== null && key in e,
+          );
           if (nested?.[key]) return nested[key] as T;
         }
       }
@@ -227,12 +274,14 @@ export async function fillTtml(responseString: string, providerParameters: Provi
     return null;
   };
 
-  const translationsData = findInMetadata<TranslationContainer[]>("translations");
-  const transliterationsData = findInMetadata<TransliterationContainer[]>("transliterations");
+  const translationsData =
+    findInMetadata<TranslationContainer[]>("translations");
+  const transliterationsData =
+    findInMetadata<TransliterationContainer[]>("transliterations");
 
   if (translationsData && translationsData.length > 0) {
-    translationsData.forEach(translateContainer => {
-      translateContainer.translation.forEach(translation => {
+    translationsData.forEach((translateContainer) => {
+      translateContainer.translation.forEach((translation) => {
         const lang = translateContainer[":@"]["@_lang"];
         const text = translation.text[0]["#text"];
         const line = translation[":@"]["@_for"];
@@ -243,7 +292,7 @@ export async function fillTtml(responseString: string, providerParameters: Provi
             return;
           }
 
-          lyricLines.forEach(id => {
+          lyricLines.forEach((id) => {
             const lyricLine = lyrics.get(id);
             if (!lyricLine) {
               return;
@@ -258,34 +307,43 @@ export async function fillTtml(responseString: string, providerParameters: Provi
   }
 
   if (transliterationsData && transliterationsData.length > 0) {
-    transliterationsData[0].transliteration.forEach((transliteration: TransliterationItem) => {
-      const line = transliteration[":@"]["@_for"];
-      if (!line) {
-        return;
-      }
-
-      const lyricLines = lyricIds[line];
-      if (!lyricLines) {
-        return;
-      }
-
-      lyricLines.forEach(id => {
-        const lyricLine = lyrics.get(id);
-        if (!lyricLine) {
+    transliterationsData[0].transliteration.forEach(
+      (transliteration: TransliterationItem) => {
+        const line = transliteration[":@"]["@_for"];
+        if (!line) {
           return;
         }
 
-        const beginTime = lyricLine.startTimeMs;
-        const parseResult = parseLyricPart(transliteration.text, beginTime, false);
+        const lyricLines = lyricIds[line];
+        if (!lyricLines) {
+          return;
+        }
 
-        lyricLine.romanization = parseResult.text;
-        lyricLine.timedRomanization = parseResult.parts;
-      });
-    });
+        lyricLines.forEach((id) => {
+          const lyricLine = lyrics.get(id);
+          if (!lyricLine) {
+            return;
+          }
+
+          const beginTime = lyricLine.startTimeMs;
+          const parseResult = parseLyricPart(
+            transliteration.text,
+            beginTime,
+            false,
+          );
+
+          lyricLine.romanization = parseResult.text;
+          lyricLine.timedRomanization = parseResult.parts;
+        });
+      },
+    );
   }
 
   let lyricArray = Array.from(lyrics.values());
-  const songDurationMs = ttMeta && ttMeta["@_dur"] ? parseTime(ttMeta["@_dur"]) : providerParameters.duration * 1000;
+  const songDurationMs =
+    ttMeta && ttMeta["@_dur"]
+      ? parseTime(ttMeta["@_dur"])
+      : providerParameters.duration * 1000;
   lyricArray = insertInstrumentalBreaks(lyricArray, songDurationMs);
 
   let result: LyricSourceResult = {
@@ -293,23 +351,25 @@ export async function fillTtml(responseString: string, providerParameters: Provi
     language: rawObj[0][":@"]["@_lang"] || ttMeta["@_lang"],
     lyrics: lyricArray,
     musicVideoSynced: false,
-    source: "boidu.dev",
-    sourceHref: "https://boidu.dev/",
+    source,
+    sourceHref,
   };
 
   if (isWordSynced) {
-    providerParameters.sourceMap["bLyrics-richsynced"].lyricSourceResult = result;
-    providerParameters.sourceMap["bLyrics-synced"].lyricSourceResult = null;
+    providerParameters.sourceMap[richsyncKey].lyricSourceResult = result;
+    providerParameters.sourceMap[syncedKey].lyricSourceResult = null;
   } else {
-    providerParameters.sourceMap["bLyrics-richsynced"].lyricSourceResult = null;
-    providerParameters.sourceMap["bLyrics-synced"].lyricSourceResult = result;
+    providerParameters.sourceMap[richsyncKey].lyricSourceResult = null;
+    providerParameters.sourceMap[syncedKey].lyricSourceResult = result;
   }
 
-  providerParameters.sourceMap["bLyrics-synced"].filled = true;
-  providerParameters.sourceMap["bLyrics-richsynced"].filled = true;
+  providerParameters.sourceMap[syncedKey].filled = true;
+  providerParameters.sourceMap[richsyncKey].filled = true;
 }
 
-export default async function bLyrics(providerParameters: ProviderParameters): Promise<void> {
+export default async function bLyrics(
+  providerParameters: ProviderParameters,
+): Promise<void> {
   // Fetch from the primary API if cache is empty or invalid
   const url = new URL(LYRICS_API_URL);
   url.searchParams.append("s", providerParameters.song);
@@ -321,7 +381,10 @@ export default async function bLyrics(providerParameters: ProviderParameters): P
   url.searchParams.append("v", providerParameters.videoId);
 
   const response = await fetch(url.toString(), {
-    signal: AbortSignal.any([providerParameters.signal, AbortSignal.timeout(10000)]),
+    signal: AbortSignal.any([
+      providerParameters.signal,
+      AbortSignal.timeout(10000),
+    ]),
   });
 
   if (!response.ok) {
@@ -334,6 +397,6 @@ export default async function bLyrics(providerParameters: ProviderParameters): P
     return;
   }
 
-  let responseString: string = await response.json().then(json => json.ttml);
+  let responseString: string = await response.json().then((json) => json.ttml);
   await fillTtml(responseString, providerParameters);
 }
