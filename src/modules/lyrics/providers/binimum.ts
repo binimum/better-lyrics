@@ -2,7 +2,7 @@ import { BINIMUM_LYRICS_API_URL } from "@constants";
 import { fillTtml } from "./blyrics/blyrics";
 import type { ProviderParameters } from "./shared";
 
-type BinimumTimingType = "word" | "line";
+type BinimumTimingType = "syllable" | "line";
 
 interface BinimumSearchResult {
   timing_type?: BinimumTimingType;
