@@ -149,7 +149,7 @@ export async function fillTtml(
   }
 ) {
   const { richsyncKey, syncedKey, source, sourceHref } = options;
-  const options: X2jOptions = {
+  const parserOptions: X2jOptions = {
     ignoreAttributes: false,
     attributeNamePrefix: "@_",
     attributesGroupName: false,
@@ -162,7 +162,7 @@ export async function fillTtml(
     parseTagValue: false,
   };
 
-  const parser = new XMLParser(options);
+  const parser = new XMLParser(parserOptions);
 
   const rawObj = (await parser.parse(responseString)) as TtmlRoot;
 
