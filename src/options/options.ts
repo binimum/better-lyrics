@@ -182,8 +182,10 @@ const restoreOptions = (): void => {
     translationLanguage: "en",
     isRomanizationEnabled: false,
     preferredProviderList: [
+      "binimum-richsynced",
       "bLyrics-richsynced",
       "musixmatch-richsync",
+      "binimum-synced",
       "yt-captions",
       "bLyrics-synced",
       "lrclib-synced",
@@ -226,8 +228,10 @@ const setOptionsInForm = (items: Options): void => {
 
   // Always recreate in the default order to make sure no items go missing
   let unseenProviders = [
+    "binimum-richsynced",
     "bLyrics-richsynced",
     "musixmatch-richsync",
+    "binimum-synced",
     "yt-captions",
     "bLyrics-synced",
     "lrclib-synced",
@@ -263,6 +267,8 @@ interface ProviderInfo {
 }
 
 const getProviderIdToInfoMap = (): { [key: string]: ProviderInfo } => ({
+  "binimum-richsynced": { name: "Binimum", syncType: "word" },
+  "binimum-synced": { name: "Binimum", syncType: "line" },
   "musixmatch-richsync": { name: t("options_provider_musixmatch"), syncType: "word" },
   "musixmatch-synced": { name: t("options_provider_musixmatch"), syncType: "line" },
   "yt-captions": { name: t("options_provider_youtubeCaptions"), syncType: "line" },

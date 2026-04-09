@@ -1,6 +1,7 @@
 import { LYRIC_SOURCE_KEYS, PROVIDER_CONFIGS, PROVIDER_SWITCHED_LOG } from "@constants";
 import { log } from "@utils";
 import bLyrics from "./blyrics/blyrics";
+import binimum from "./binimum";
 import cubey, { type CubeyLyricSourceResult } from "./cubey";
 import lyricLib from "./lrclib";
 import ytLyrics, { type YTLyricSourceResult } from "./yt";
@@ -145,6 +146,8 @@ export function initProviders(): void {
 }
 
 const sourceKeyToFillFn = {
+  "binimum-richsynced": binimum,
+  "binimum-synced": binimum,
   "bLyrics-richsynced": bLyrics,
   "bLyrics-synced": bLyrics,
   "musixmatch-richsync": cubey,
