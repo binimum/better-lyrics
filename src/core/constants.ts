@@ -397,7 +397,7 @@ export const PROVIDER_CONFIGS: ProviderConfig[] = [
   {
     key: "binimum-richsynced",
     displayName: "BiniLyrics",
-    syncType: "word",
+    syncType: "syllable",
     priority: 0,
   },
   {
